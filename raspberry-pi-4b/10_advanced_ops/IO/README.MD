@@ -1,18 +1,6 @@
----
-
 # Linux Kernel Driver: Blocking I/O & Wait Queues
 
-This repository demonstrates how a Linux character device driver handles **Blocking I/O**. It explores the mechanisms used to manage scenarios where a hardware resource is not immediately available, such as reading from an empty buffer or writing to a busy device.
-
-## Table of Contents
-
-* [Objective](https://www.google.com/search?q=%23objective)
-* [Core Concepts](https://www.google.com/search?q=%23core-concepts)
-* [Wait Queues: The Mechanics of Sleeping](https://www.google.com/search?q=%23wait-queues-the-mechanics-of-sleeping)
-* [Included Modules](https://www.google.com/search?q=%23included-modules)
-* [Test Flow: sleepy_basic](https://www.google.com/search?q=%23test-flow-sleepy_basic)
-
----
+## This repository demonstrates how a Linux character device driver handles **Blocking I/O**. It explores the mechanisms used to manage scenarios where a hardware resource is not immediately available, such as reading from an empty buffer or writing to a busy device.
 
 ## Objective
 
@@ -20,67 +8,49 @@ The goal of this chapter is to cover how a character device driver should respon
 
 ## Core Concepts
 
-* 
-**Blocking I/O:** The driver is expected to block or put the calling process into a sleep state.
+- **Blocking I/O:** The driver is expected to block or put the calling process into a sleep state.
 
+- **Non-Blocking I/O:** The driver returns immediately to the user with the respected `errno` (e.g., `-EAGAIN`).
 
-* 
-**Non-Blocking I/O:** The driver returns immediately to the user with the respected `errno` (e.g., `-EAGAIN`).
-
-
-* 
-**Sleep State:** A process is removed from the scheduler run queue and will not be scheduled on any CPU until its state is changed.
-
-
+- **Sleep State:** A process is removed from the scheduler run queue and will not be scheduled on any CPU until its state is changed.
 
 ### Rules for Sleeping
 
-1. 
-**No Atomic Context:** A process should not sleep if it is running in an atomic context (e.g., holding RCU, spin, or seq locks).
+1.  **No Atomic Context:** A process should not sleep if it is running in an atomic context (e.g., holding RCU, spin, or seq locks).
 
+2.  **Post-Wake Assumptions:** You must always check the condition you were waiting for after waking up, as you cannot make assumptions about the system state.
 
-2. 
-**Post-Wake Assumptions:** You must always check the condition you were waiting for after waking up, as you cannot make assumptions about the system state.
-
-
-3. 
-**The Guarantee:** You cannot sleep unless it is assured that "somebody" else will wake you up later and that the process can be found to be awakened.
-
-
+3.  **The Guarantee:** You cannot sleep unless it is assured that "somebody" else will wake you up later and that the process can be found to be awakened.
 
 ## Wait Queues: The Mechanics of Sleeping
 
 Making it possible for a sleeping process to be found is accomplished through a data structure called a **wait queue**.
 
-Implementation Details 
+Implementation Details
 
 **Declaring a Wait Queue:**
 
-* **Static:** `DECLARE_WAIT_QUEUE_HEAD(name);`
-* **Dynamic:** ```c
-wait_queue_head_t my_queue;
-init_waitqueue_head(&my_queue);
-```
-
+- **Static:** `DECLARE_WAIT_QUEUE_HEAD(name);`
+- **Dynamic:** ```c
+  wait_queue_head_t my_queue;
+  init_waitqueue_head(&my_queue);
 
 ```
 
 
+```
 
 **Sleeping Macros:**
 
-* `wait_event(queue, condition)`
-* `wait_event_interruptible(queue, condition)`
-* `wait_event_timeout(queue, condition, timeout)`
-* `wait_event_interruptible_timeout(queue, condition, timeout)`
+- `wait_event(queue, condition)`
+- `wait_event_interruptible(queue, condition)`
+- `wait_event_timeout(queue, condition, timeout)`
+- `wait_event_interruptible_timeout(queue, condition, timeout)`
 
 **Waking Functions:**
 
-* `void wake_up(wait_queue_head_t *queue);`
-* 
-`void wake_up_interruptible(wait_queue_head_t *queue);` 
-
-
+- `void wake_up(wait_queue_head_t *queue);`
+- `void wake_up_interruptible(wait_queue_head_t *queue);`
 
 ---
 
